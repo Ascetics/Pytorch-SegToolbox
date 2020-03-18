@@ -4,7 +4,7 @@ import numpy as np
 
 from torch.utils.data import DataLoader
 from PIL import Image
-
+from datasets.process_label import id_to_trainid
 from utils.augment import PairCrop, PairResize, PairAdjust, PairRandomHFlip, \
     PairNormalizeToTensor, PairRandomFixErase
 
@@ -89,7 +89,13 @@ def get_data(data_type, crop_offset=(690, None), resize_to=256,
     else:
         raise ValueError('data type error!')
 
-    image_dataset = LaneSegDataset(Config.DATA_LIST[data_type],
+    data_list = {
+        'train': '/root/private/LaneSegmentation/data_list/train.csv',  # 车道线分割训练集csv文件路径
+        'valid': '/root/private/LaneSegmentation/data_list/valid.csv',  # 车道线分割验证集csv文件路径
+        'test': '/root/private/LaneSegmentation/data_list/test.csv',  # 车道线分割测试集csv文件路径
+    }
+
+    image_dataset = LaneSegDataset(data_list[data_type],
                                    transform)
     data_loader = DataLoader(image_dataset, batch_size=batch_size,
                              shuffle=shuffle, drop_last=True)
