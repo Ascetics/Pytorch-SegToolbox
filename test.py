@@ -7,7 +7,7 @@ from PIL import Image
 from train import get_model
 from datasets.laneseg import LaneSegDataset
 from datasets.process_label import gray_to_rgb
-from utils.tools import now_str, get_metrics, get_confusion_matrix, log
+from utils.tools import now_str, get_metrics, get_confusion_matrix, get_logger
 from utils.augment import PairCrop, PairNormalizeToTensor, PairResize
 
 
@@ -95,7 +95,12 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
             pass
         mean_iou = get_metrics(confusion_matrix)  # 整个测试的mIoU
         test_pics_miou /= len(test_data)
-        log('{:s}\nTest mIoU: {:.4f}|Average mIoU of test data:  {:.4f}\n'.format(now_str(), mean_iou, test_pics_miou))
+
+        logger = get_logger('test')
+        msg = 'Test mIoU : {:.4f} (Accumulate ConfusionMat)'.format(mean_iou)
+        logger.info(msg)
+        msg = 'Test mIoU : {:.4f} (Mean of per Image)'.format(test_pics_miou)
+        logger.info(msg)
         return mean_iou
 
 

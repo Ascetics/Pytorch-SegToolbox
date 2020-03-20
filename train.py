@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -6,11 +7,11 @@ import torch.nn.functional as F
 from models.deeplabv3p import DeepLabV3P
 from datasets.laneseg import get_data
 from utils.lossfn import SemanticSegLoss
-from utils.tools import log, now_str, epoch_timer, save_weight, get_confusion_matrix, get_metrics
+from utils.tools import get_logger, now_str, timer, save_weight, get_confusion_matrix, get_metrics
 from config import Config
 
 
-@epoch_timer
+@timer(get_logger())
 def _epoch_train(net, loss_func, optimizer, train_data, n_class, device):
     """
     一个epoch训练
@@ -52,7 +53,7 @@ def _epoch_train(net, loss_func, optimizer, train_data, n_class, device):
     return total_loss, mean_iou
 
 
-@epoch_timer
+@timer(get_logger())
 def _epoch_valid(net, loss_func, valid_data, n_class, device):
     """
     一个epoch验证
@@ -106,22 +107,21 @@ def train(net, loss_func, optimizer, train_data, valid_data,
     :return:
     """
     for e in range(1, epochs + 1):
-        epoch_str = '{:s}|Epoch: {:02d}|\n'.format(str(now_str()), e)
-        log(epoch_str)
+        get_logger().info('Epoch: {:02d}'.format(e))
 
         # 一个epoch训练
         t_loss, t_miou = _epoch_train(net, loss_func, optimizer, train_data, n_class, device)
-        train_str = 'Train Loss: {:.4f}|Train mIoU: {:.4f}|\n'.format(t_loss, t_miou)
-        log(train_str)
+        train_str = 'Train Loss: {:.4f}|Train mIoU: {:.4f}|'.format(t_loss, t_miou)
+        get_logger().info(train_str)
 
         # 每个epoch的参数都保存
         save_dir = save_weight(net, model_name, e)
-        log(save_dir + '\n')  # 日志记录
+        get_logger().info(save_dir)  # 日志记录
 
         # 一个epoch验证
         v_loss, v_miou = _epoch_valid(net, loss_func, valid_data, n_class, device)
-        valid_str = 'Valid Loss: {:.4f}|Valid mIoU: {:.4f}|\n'.format(v_loss, v_miou)
-        log(valid_str)
+        valid_str = 'Valid Loss: {:.4f}|Valid mIoU: {:.4f}|'.format(v_loss, v_miou)
+        get_logger(valid_str)
         pass
     pass
 
@@ -149,17 +149,17 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
         model = DeepLabV3P('xception', in_channels, n_class)
     else:
         raise ValueError('model name error!')
-    log(model_type + '\n')
+    get_logger().info(model_type)
 
     model.to(device)
 
     if load_weight and os.path.exists(load_weight):
         # 有训练好的模型就加载
-        log(load_weight + ' exists! loading...\n')
+        get_logger().info(load_weight + ' exists! loading...')
         wt = torch.load(load_weight, map_location=device)
         model.load_state_dict(wt)
     else:
-        print(load_weight + ' can not be found!')
+        get_logger().info(load_weight + ' can not be found or not specified!')
 
     return model
 
