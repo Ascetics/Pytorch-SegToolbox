@@ -19,10 +19,6 @@ class Config(object):
     # 数据集 ####################################################################
     DATASETS_ROOT = '/root/private/torch_datasets'  # Pytorch数据集根目录
 
-    # 训练结果###################################################################
-    WEIGHT_SAVE_PATH = '/root/private/LaneSegmentation/weight'  # weight保存路径
-    LOG_FILE = '/root/private/LaneSegmentation/weight/train.log'  # 训练日志
-
     # 数据处理 ####################################################################
     IMAGE_BASE = '/root/data/LaneSeg/Image_Data'  # image文件的根目录
     LABEL_BASE = '/root/data/LaneSeg/Gray_Label'  # label文件的根目录
