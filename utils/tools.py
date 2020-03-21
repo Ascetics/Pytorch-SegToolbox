@@ -5,7 +5,6 @@ import time
 import torch
 import numpy as np
 from datetime import datetime
-from config import Config
 
 
 def now_str():
@@ -14,6 +13,14 @@ def now_str():
     :return: YYYY-mm-dd-HH-MM-SS
     """
     return time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())
+
+
+def get_proj_root():
+    """
+    获取项目根目录的绝对路径
+    :return:
+    """
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def timer(logger):
@@ -46,8 +53,7 @@ def get_logger(logger_type='train'):
     if not logger.handlers:  # 防止加入多个handler造成重复写日志
         fmt = logging.Formatter('%(asctime)s %(msg)s')  # 日志格式
 
-        proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logfile = os.path.join(os.path.join(proj_root, 'res'),
+        logfile = os.path.join(os.path.join(get_proj_root(), 'res'),
                                '{:s}.log'.format(logger_type))  # 日志位置
 
         fh = logging.FileHandler(logfile)
@@ -72,8 +78,7 @@ def save_weight(net, name, epoch, save_dir=None):
     :return:
     """
     if save_dir is None or not os.path.exists(save_dir):
-        proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        save_dir = os.path.join(proj_root, 'res')
+        save_dir = os.path.join(get_proj_root(), 'res')
     filename = '{:s}-{:s}-epoch-{:02d}.pth'
     filename = filename.format(name, now_str(), epoch)  # 模型参数文件{模型名}-{保存日期时间}-epoch-{第几个epoch}.pkl
     save_dir = os.path.join(save_dir, filename)  # 保存的文件绝对路径
