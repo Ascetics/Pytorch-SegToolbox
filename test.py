@@ -101,8 +101,8 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
         total_batch_miou /= len(data)
 
         logger = get_logger()
-        msg = ('Test mIoU : {:.4f} (Accumulate ConfusionMat)|'
-               'Test mIoU : {:.4f} (Mean of per Image)').format(mean_iou, total_batch_miou)
+        msg = ('Test mIoU : {:.4f} (Mean of Epoch ConfusionMat)|'
+               'Test mIoU : {:.4f} (Mean of Batch ConfusionMat)').format(mean_iou, total_batch_miou)
         logger.info(msg)
         return mean_iou
 
