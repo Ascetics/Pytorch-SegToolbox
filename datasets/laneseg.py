@@ -28,6 +28,7 @@ class LaneSegDataset(Dataset):
         'valid': os.path.join(_data_list_dir, 'laneseg_valid.csv'),  # 车道线分割验证集csv文件路径
         'test': os.path.join(_data_list_dir, 'laneseg_test.csv'),  # 车道线分割测试集csv文件路径
     }
+    skip_road = ('Road03',)  # 冠军观察数据说Road03数据质量不好
 
     @staticmethod
     def _get_image_label_dir():
@@ -40,6 +41,8 @@ class LaneSegDataset(Dataset):
         label_base = os.path.join(LaneSegDataset.label_file_base)  # 服务器上Label根目录
 
         for road in os.listdir(image_base):  # 遍历根目录下所有目录
+            if road in LaneSegDataset.skip_road:  # 排除Road
+                continue
             image_road = os.path.join(image_base, road)  # image的Road02-Road04
             label_road = os.path.join(label_base, 'Label_' + str.lower(road))  # label的Label_road02-Label_road04
             if not (os.path.isdir(image_road) and
