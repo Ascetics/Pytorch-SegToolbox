@@ -315,7 +315,7 @@ if __name__ == '__main__':
     LaneSegDataset.make_data_list(0.0004, 0.0004)
 
     # 训练、验证、测试dataset
-    data = get_data('test')
+    data = get_data('test', norm=False)
 
     # 逐个读取，查看读取的内容，验证dataloader可用
     for i, (im, lb) in enumerate(data):
