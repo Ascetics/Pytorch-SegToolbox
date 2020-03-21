@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 from tqdm import tqdm
 from models.deeplabv3p import DeepLabV3P
+from models.fcn8s import FCN8s
 from datasets.laneseg import get_data
 from utils.lossfn import SemanticSegLoss
 from utils.tools import get_logger, timer, save_weight, get_confusion_matrix, get_metrics
@@ -131,8 +132,8 @@ def train(net, loss_func, optimizer, train_data, valid_data,
         # 一个epoch训练
         t_loss, t_miou, t_batch_miou = _epoch_train(net, loss_func, optimizer, train_data, n_class, device)
         train_str = ('Train Loss: {:.4f}|'
-                     'Train mIoU: {:.4f} (Accumulate ConfusionMat)|'
-                     'Train mIoU: {:.4f} (Mean of per Batch)').format(t_loss, t_miou, t_batch_miou)
+                     'Train mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
+                     'Train mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(t_loss, t_miou, t_batch_miou)
         get_logger().info(train_str)
 
         # 每个epoch的参数都保存
@@ -142,8 +143,8 @@ def train(net, loss_func, optimizer, train_data, valid_data,
         # 一个epoch验证
         v_loss, v_miou, v_batch_miou = _epoch_valid(net, loss_func, valid_data, n_class, device)
         valid_str = ('Valid Loss: {:.4f}|'
-                     'Valid mIoU: {:.4f} (Accumulate ConfusionMat)|'
-                     'Valid mIoU: {:.4f} (Mean of per Batch)').format(v_loss, v_miou, v_batch_miou)
+                     'Valid mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
+                     'Valid mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(v_loss, v_miou, v_batch_miou)
         get_logger().info(valid_str)
         pass
     pass
@@ -160,8 +161,8 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
     :return:
     """
     if model_type == 'fcn8s':
-        raise NotImplementedError
-        # model = FCN8s(n_class)
+        # raise NotImplementedError
+        model = FCN8s(n_class)
     elif model_type == 'resnet152':
         raise NotImplementedError
         # model = unet_resnet('resnet152', in_channels, n_class, pretrained=True)
@@ -191,7 +192,8 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
 
 if __name__ == '__main__':
     dev = torch.device('cpu')
-    name = 'deeplabv3p_xception'
+    # name = 'deeplabv3p_xception'
+    name = 'fcn8s'
     load_file = None
     # load_file = ('/root/private/LaneSegmentation/weight/'
     #              'deeplabv3p_xception-2020-03-17 06:03:02.609908-epoch-14.pth')
