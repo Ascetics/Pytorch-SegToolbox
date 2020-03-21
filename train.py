@@ -12,7 +12,7 @@ from utils.tools import get_logger, timer, save_weight, get_confusion_matrix, ge
 
 
 @timer
-def _epoch_train(net, loss_func, optimizer, data, n_class, device):
+def _epoch_train(net, loss_func, optimizer, data, n_class, device, i_epoch):
     """
     一个epoch训练
     :param net: AI网络
@@ -30,8 +30,10 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device):
     total_cm = np.zeros((n_class, n_class))  # ndarray 一个epoch的混淆矩阵
     total_batch_miou = 0.
 
-    tqdm_data = tqdm(enumerate(data, start=1))
-    for i_batch, (im, lb) in tqdm_data:
+    bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+    tqdm_data = tqdm(data, bar_format=bar_format,
+                     desc='Epoch {:02d} Train'.format(i_epoch))  # 进度条
+    for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
         im = im.to(device)  # [N,C,H,W] tensor 一个训练batch image
         lb = lb.to(device)  # [N,H,W] tensor 一个训练batch label
 
@@ -54,8 +56,11 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device):
         batch_miou = get_metrics(batch_cm, metrics='mean_iou')
         total_batch_miou += batch_miou
 
-        tqdm_str = '{:d}/{:d} batch|batch_loss: {:.4f}|batch_miou: {:.4f}'
-        tqdm_data.set_description(tqdm_str.format(i_batch, len(data), batch_loss, batch_miou))
+        tqdm_str = 'Loss={:.4f}|mIoU={:.4f}|bat_mIoU={:.4f}'  # 进度条
+        tqdm_data.set_postfix_str(
+            tqdm_str.format(total_loss / i_batch,
+                            get_metrics(total_cm, metrics='mean_iou'),
+                            total_batch_miou / i_batch))
         pass
     total_loss /= len(data)  # float 求取一个epoch的loss
     mean_iou = get_metrics(total_cm, metrics='mean_iou')  # float 求mIoU
@@ -65,7 +70,7 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device):
 
 
 @timer
-def _epoch_valid(net, loss_func, data, n_class, device):
+def _epoch_valid(net, loss_func, data, n_class, device, i_epoch):
     """
     一个epoch验证
     :param net: AI网络
@@ -83,8 +88,10 @@ def _epoch_valid(net, loss_func, data, n_class, device):
     total_batch_miou = 0.
 
     with torch.no_grad():  # 验证阶段，不需要计算梯度，节省内存
-        tqdm_data = tqdm(enumerate(data, start=1))
-        for i_batch, (im, lb) in tqdm_data:
+        bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+        tqdm_data = tqdm(data, bar_format=bar_format,
+                         desc='Epoch {:02d} Valid'.format(i_epoch))  # 进度条
+        for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
             im = im.to(device)  # [N,C,H,W] tensor 一个验证batch image
             lb = lb.to(device)  # [N,H,W] tensor 一个验证batch label
 
@@ -102,8 +109,11 @@ def _epoch_valid(net, loss_func, data, n_class, device):
             batch_miou = get_metrics(batch_cm, metrics='mean_iou')
             total_batch_miou += batch_miou
 
-            tqdm_str = '{:d}/{:d} batch|batch_loss: {:.4f}|batch_miou: {:.4f}'
-            tqdm_data.set_description(tqdm_str.format(i_batch, len(data), batch_loss, batch_miou))
+            tqdm_str = 'Loss={:.4f}|mIoU={:.4f}|bat_mIoU={:.4f}'  # 进度条
+            tqdm_data.set_postfix_str(
+                tqdm_str.format(total_loss / i_batch,
+                                get_metrics(total_cm, metrics='mean_iou'),
+                                total_batch_miou / i_batch))
             pass
         total_loss /= len(data)  # 求取一个epoch验证的loss
         mean_iou = get_metrics(total_cm, metrics='mean_iou')  # float 求mIoU
@@ -130,7 +140,7 @@ def train(net, loss_func, optimizer, train_data, valid_data,
         get_logger().info('Epoch: {:02d}'.format(e))
 
         # 一个epoch训练
-        t_loss, t_miou, t_batch_miou = _epoch_train(net, loss_func, optimizer, train_data, n_class, device)
+        t_loss, t_miou, t_batch_miou = _epoch_train(net, loss_func, optimizer, train_data, n_class, device, e)
         train_str = ('Train Loss: {:.4f}|'
                      'Train mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
                      'Train mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(t_loss, t_miou, t_batch_miou)
@@ -141,7 +151,7 @@ def train(net, loss_func, optimizer, train_data, valid_data,
         get_logger().info(save_dir)  # 日志记录
 
         # 一个epoch验证
-        v_loss, v_miou, v_batch_miou = _epoch_valid(net, loss_func, valid_data, n_class, device)
+        v_loss, v_miou, v_batch_miou = _epoch_valid(net, loss_func, valid_data, n_class, device, e)
         valid_str = ('Valid Loss: {:.4f}|'
                      'Valid mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
                      'Valid mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(v_loss, v_miou, v_batch_miou)
