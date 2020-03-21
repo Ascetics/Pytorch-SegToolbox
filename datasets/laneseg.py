@@ -309,15 +309,14 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
 
 
 if __name__ == '__main__':
-    # LaneSegDataset.make_data_list()
+    LaneSegDataset.make_data_list(0.0001, 0.0001)
 
     # 训练、验证、测试dataset
     data = get_data('test')
 
     # 逐个读取，查看读取的内容，验证dataloader可用
     for i, (im, lb) in enumerate(data):
-        s = input('>>>')
-        if s == 'q':
+        if i > 1:
             break
         print(i)
         print(type(im), im.shape)
@@ -329,7 +328,6 @@ if __name__ == '__main__':
         lb = TF.to_pil_image(lb.squeeze(0))
         ax[0].imshow(im)
         ax[1].imshow(lb, cmap='gray')
-        plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'), 'laneseg_dataset.jpg'))
+        plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'),
+                                 'laneseg_dataset' + str(i) + '.jpg'))
         plt.close(fig)
-
-
