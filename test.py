@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from train import get_model
 from datasets.laneseg import LaneSegDataset
-from datasets.process_label import gray_to_rgb
 from utils.tools import now_str, get_metrics, get_confusion_matrix, get_logger
 from utils.augment import PairCrop, PairNormalizeToTensor, PairResize
 
@@ -65,7 +64,7 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
                 ax[0].imshow(im)  # 左上角显示原图
                 ax[0].set_title('Input Image', fontsize=fontsize)  # 标题
 
-                ax[1].imshow(gray_to_rgb(np.asarray(lb)))  # 右上角显示 Grand Truth
+                ax[1].imshow(LaneSegDataset.decode_rgb(np.asarray(lb)))  # 右上角显示 Grand Truth
                 ax[1].set_title('Grand Truth', fontsize=fontsize)  # 标题
 
                 pic_miou = get_metrics(cm, metrics='mean_iou')  # 计算本张图像的mIoU
@@ -74,7 +73,7 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
 
                 mask = (pred != 0).astype(np.uint8) * 255  # [H,W]ndarray,alpha融合的mask
 
-                pred = gray_to_rgb(pred)  # [H,W,C=3]ndarray RGB
+                pred = LaneSegDataset.decode_rgb(pred)  # [H,W,C=3]ndarray RGB
                 ax[3].imshow(pred)  # 右下角显示Pred
                 ax[3].set_title('Pred', fontsize=fontsize)  # 标题
 
