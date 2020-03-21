@@ -312,7 +312,7 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
 
 
 if __name__ == '__main__':
-    LaneSegDataset.make_data_list(0.0001, 0.0001)
+    LaneSegDataset.make_data_list(0.0004, 0.0004)
 
     # 训练、验证、测试dataset
     data = get_data('test')
