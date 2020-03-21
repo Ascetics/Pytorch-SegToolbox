@@ -32,10 +32,11 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
     pair_norm_to_tensor = PairNormalizeToTensor(norm=True)  # 归一化并正则化
 
     with torch.no_grad():  # 测试阶段，不需要计算梯度，节省内存
-        tqdm_data = tqdm(enumerate(data, start=1))
-        for i_batch, (im, lb) in tqdm_data:
-            # if i_batch > 10:
-            #     break
+        bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+        tqdm_data = tqdm(data, bar_format=bar_format, desc='Test')
+        for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
+            if i_batch > 1:
+                break
             im_t, lb_t = pair_crop(im, lb)  # PIL Image,PIL Image
             im_t, lb_t = pair_resize(im_t, lb_t)  # PIL Image,PIL Image
             im_t, lb_t = pair_norm_to_tensor(im_t, lb_t)  # [C,H,W]tensor,[H,W]tensor
@@ -57,7 +58,6 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
             pred = np.append(supplement, pred, axis=0)  # 最终的估值，[H,W]ndarray,在H方向cat，给pred补充被剪裁的690x3384
             batch_cm = get_confusion_matrix(pred, lb, n_class)  # 本张图像的混淆矩阵
             total_cm += batch_cm  # 累加
-            batch_miou = 0.  # 每个图像的miou可能不计算，那就一直写0
 
             if compare:  # 生成对比图
                 fontsize = 16  # 图像文字字体大小
@@ -94,8 +94,10 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
                 plt.savefig('/root/private/imfolder/pred-{:s}.jpg'.format(now_str()))  # 保存图像
                 plt.close(fig)
                 pass
-            tqdm_str = '{:d}/{:d} batch|batch_miou {:.4f}'
-            tqdm_data.set_description(tqdm_str.format(i_batch, len(data), batch_miou))
+            tqdm_str = 'mIoU={:.4f}|bat_mIoU={:.4f}'  # 进度条
+            tqdm_data.set_postfix_str(
+                tqdm_str.format(get_metrics(total_cm),
+                                total_batch_miou / i_batch))
             pass
         mean_iou = get_metrics(total_cm)  # 整个测试的mIoU
         total_batch_miou /= len(data)
@@ -108,9 +110,10 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
 
 
 if __name__ == '__main__':
-    dev = torch.device('cuda:4')  # 选择一个可用的GPU
-    load_file = ('/root/private/LaneSegmentation/weight/'
-                 'deeplabv3p_xception-2020-03-18-15-32-34-epoch-03.pth')  # 读取训练好的参数
+    dev = torch.device('cpu')  # 选择一个可用的GPU
+    # load_file = ('/root/private/LaneSegmentation/weight/'
+    #              'deeplabv3p_xception-2020-03-18-15-32-34-epoch-03.pth')  # 读取训练好的参数
+    load_file = None
     mod = get_model('deeplabv3p_xception',
                     in_channels=3, n_class=8, device=dev, load_weight=load_file)
     # model = DeepLabV3P('xception', 3, 8)
