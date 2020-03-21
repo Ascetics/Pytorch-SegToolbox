@@ -23,25 +23,16 @@ def get_proj_root():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def timer(logger):
-    def timer_func(func):
-        """
-        装饰器。epoch计时器，记录一个epoch用时并打印
-        :param func: 被装饰函数，是epoch_train
-        :return:
-        """
-
-        def timer_logger(*args, **kwargs):  # func的所有入参
-            begin_time = datetime.now()  # 开始时间
-            res = func(*args, **kwargs)  # 执行func，记录func返回值
-            end_time = datetime.now()  # 结束时间
-            mm, ss = divmod((end_time - begin_time).seconds, 60)  # 秒换算成分、秒
-            hh, mm = divmod(mm, 60)  # 分钟换算成时、分
-            duration_str = 'Duration: {:02d}:{:02d}:{:02d}|'.format(hh, mm, ss)  # HH:mm:ss
-            logger.info(duration_str)  # 记录到日志里面
-            return res  # 返回func返回值
-
-        return timer_logger
+def timer(func):
+    def timer_func(*args, **kwargs):
+        begin_time = datetime.now()  # 开始时间
+        res = func(*args, **kwargs)  # 执行func，记录func返回值
+        end_time = datetime.now()  # 结束时间
+        mm, ss = divmod((end_time - begin_time).seconds, 60)  # 秒换算成分、秒
+        hh, mm = divmod(mm, 60)  # 分钟换算成时、分
+        duration_str = 'Duration: {:02d}:{:02d}:{:02d}|'.format(hh, mm, ss)  # HH:mm:ss
+        get_logger().info(duration_str)  # 记录到日志里面
+        return res  # 返回func返回值
 
     return timer_func
 
