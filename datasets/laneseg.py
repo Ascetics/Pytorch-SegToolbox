@@ -266,7 +266,7 @@ class LaneSegDataset(Dataset):
 
 
 def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
-             batch_size=1):
+             batch_size=1, norm=True):
     """
     获取数据集
     :param dataset_type: 可以是'train', 'valid', 'test'数据集
@@ -281,7 +281,7 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
             PairResize(size=resize_to),  # 等比缩放
             PairRandomHFlip(),  # 随机左右翻转
             PairAdjustColor(),  # 调整亮度、对比度、饱和度
-            PairNormalizeToTensor(),  # 归一化正则化，变成tensor
+            PairNormalizeToTensor(norm=norm),  # 归一化正则化，变成tensor
             PairRandomFixErase(),  # 随机遮挡
         ]
         shuffle = True
@@ -289,14 +289,14 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
         transform = [
             PairCrop(offsets=crop_offset),  # 剪裁
             PairResize(size=resize_to),  # 等比缩放
-            PairNormalizeToTensor(),  # 归一化正则化，变成tensor
+            PairNormalizeToTensor(norm=norm),  # 归一化正则化，变成tensor
         ]
         shuffle = True
     elif dataset_type == 'test':
         transform = [
             PairCrop(offsets=crop_offset),  # 剪裁
             PairResize(size=resize_to),  # 等比缩放
-            PairNormalizeToTensor(norm=False),  # 归一化但不正则化，变成tensor
+            PairNormalizeToTensor(norm=norm),  # 归一化但不正则化，变成tensor
         ]
         shuffle = False
     else:
