@@ -6,7 +6,7 @@ import sklearn
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from utils.tools import get_proj_root
-from utils.augment import PairCrop, PairResize, PairAdjust, PairRandomHFlip, \
+from utils.augment import PairCrop, PairResize, PairAdjustColor, PairRandomHFlip, \
     PairNormalizeToTensor, PairRandomFixErase
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF
@@ -280,7 +280,7 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
             PairCrop(offsets=crop_offset),  # 剪裁
             PairResize(size=resize_to),  # 等比缩放
             PairRandomHFlip(),  # 随机左右翻转
-            PairAdjust(),  # 调整亮度、对比度、饱和度
+            PairAdjustColor(),  # 调整亮度、对比度、饱和度
             PairNormalizeToTensor(),  # 归一化正则化，变成tensor
             PairRandomFixErase(),  # 随机遮挡
         ]
@@ -309,25 +309,27 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
 
 
 if __name__ == '__main__':
-    LaneSegDataset.make_data_list()
+    # LaneSegDataset.make_data_list()
 
     # 训练、验证、测试dataset
-    # data = get_data('test')
+    data = get_data('test')
 
     # 逐个读取，查看读取的内容，验证dataloader可用
-    # for i, (im, lb) in enumerate(data):
-    #     s = input('>>>')
-    #     if s == 'q':
-    #         break
-    #     print(i)
-    #     print(type(im), im.shape)
-    #     print(type(lb), lb.shape, np.bincount(lb.flatten()))
-    #
-    #     fig, ax = plt.subplots(1, 2)
-    #     ax = ax.flatten()
-    #     im = TF.to_pil_image(im.squeeze(0))
-    #     lb = TF.to_pil_image(lb.squeeze(0))
-    #     ax[0].imshow(im)
-    #     ax[1].imshow(lb, cmap='gray')
-    #     plt.savefig('./fig.jpg')
-    #     plt.close(fig)
+    for i, (im, lb) in enumerate(data):
+        s = input('>>>')
+        if s == 'q':
+            break
+        print(i)
+        print(type(im), im.shape)
+        print(type(lb), lb.shape, np.bincount(lb.flatten()))
+
+        fig, ax = plt.subplots(1, 2)
+        ax = ax.flatten()
+        im = TF.to_pil_image(im.squeeze(0))
+        lb = TF.to_pil_image(lb.squeeze(0))
+        ax[0].imshow(im)
+        ax[1].imshow(lb, cmap='gray')
+        plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'), 'laneseg_dataset.jpg'))
+        plt.close(fig)
+
+

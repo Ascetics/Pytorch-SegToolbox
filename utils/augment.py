@@ -3,7 +3,9 @@ import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import os
 from PIL import Image, ImageFilter
+from utils.tools import get_proj_root
 
 
 class PairCrop(object):
@@ -30,7 +32,7 @@ class PairCrop(object):
                      self.start[1] + size[1] if size[1] is not None else size[1],)
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         剪裁图像
         :param image: [H,W,C] PIL Image RGB
@@ -39,8 +41,9 @@ class PairCrop(object):
         """
 
         image = np.asarray(image)
-        label = np.asarray(label)
-        assert image.shape[:2] == label.shape[:2]
+        if label is not None:
+            label = np.asarray(label)
+            assert image.shape[:2] == label.shape[:2]
 
         h, w = image.shape[0], image.shape[1]
         assert 0 <= self.start[0] < h and (self.stop[0] is None or 0 <= self.stop[0] < h)  # 剪裁大小不超过原图像大小
@@ -50,47 +53,8 @@ class PairCrop(object):
         wslice = slice(self.start[1], self.stop[1])  # W方向剪裁量
 
         image = Image.fromarray(image[hslice, wslice])
-        label = Image.fromarray(label[hslice, wslice])
-        return image, label
-
-    pass
-
-
-class PairCropTF(object):
-    def __init__(self, top=0, left=0, height=None, width=None):
-        """
-        剪裁图像，这个不好用
-        :param top:
-        :param left:
-        :param height:
-        :param width:
-        """
-        super(PairCropTF, self).__init__()
-        assert 0 <= top and 0 <= left
-        assert height is None or 0 < height
-        assert width is None or 0 < width
-        self.top = top
-        self.left = left
-        self.height = height
-        self.width = width
-        pass
-
-    def __call__(self, image, label):
-        """
-        剪裁图像
-        :param image: [H,W,C] PIL Image RGB
-        :param label: [H,W] PIL Image trainId
-        :return: [H,W,C] PIL Image RGB,  [H,W] PIL Image trainId、
-        """
-        assert image.size[:2] == label.size[:2]
-        w, h = image.size[:2]  # PIL Image是WH
-        assert self.height is None or self.top + self.height < h  # 剪裁大小不超过原图像大小
-        assert self.width is None or self.left + self.width < w
-
-        height = h - self.top if self.height is None else self.height  # None就剪裁到最后
-        width = w - self.left if self.width is None else self.width
-        image = TF.crop(image, self.top, self.left, height, width)
-        label = TF.crop(label, self.top, self.left, height, width)
+        if label is not None:
+            label = Image.fromarray(label[hslice, wslice])
         return image, label
 
     pass
@@ -101,7 +65,7 @@ class PairRandomHFlip(object):
         super(PairRandomHFlip, self).__init__()
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         图像随机左右翻转
         :param image: [H,W,C] PIL Image RGB
@@ -110,7 +74,8 @@ class PairRandomHFlip(object):
         """
         if random.uniform(0, 1) < 0.5:  # 50%的概率会翻转
             image = TF.hflip(image)  # 左右翻转
-            label = TF.hflip(label)
+            if label is not None:
+                label = TF.hflip(label)
         return image, label
 
     pass
@@ -121,7 +86,7 @@ class PairRandomVFlip(object):
         super(PairRandomVFlip, self).__init__()
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         图像随机上下翻转
         :param image: [H,W,C] PIL Image RGB
@@ -130,19 +95,20 @@ class PairRandomVFlip(object):
         """
         if random.uniform(0, 1) < 0.5:  # 50%的概率会翻转
             image = TF.vflip(image)  # 上下翻转
-            label = TF.vflip(label)
+            if label is not None:
+                label = TF.vflip(label)
         return image, label
 
     pass
 
 
-class PairAdjust(object):
+class PairAdjustColor(object):
     def __init__(self, factors=(0.3, 2.)):
-        super(PairAdjust, self).__init__()
+        super(PairAdjustColor, self).__init__()
         self.factors = factors
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         调整亮度、对比度、饱和度
         只调整image，不调整label
@@ -175,7 +141,7 @@ class PairAdjustGamma(object):
         self.gain = gain
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         Gamma矫正
         :param image: [H,W,C] PIL Image RGB 0~255
@@ -205,7 +171,7 @@ class PairResize(object):
             self.size = size
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         图像等比缩放
         :param image: [H,W,C] PIL Image RGB
@@ -217,10 +183,12 @@ class PairResize(object):
 
         if isinstance(self.size, int):  # 等比例缩放
             image = TF.resize(image, self.size, interpolation=Image.BILINEAR)
-            label = TF.resize(label, self.size, interpolation=Image.NEAREST)  # label要用邻近差值
+            if label is not None:
+                label = TF.resize(label, self.size, interpolation=Image.NEAREST)  # label要用邻近差值
         elif isinstance(self.size, tuple):  # 指定输出大小的缩放
             image = image.resize(self.size, resample=Image.BILINEAR)
-            label = label.resize(self.size, resample=Image.NEAREST)  # label要用邻近差值
+            if label is not None:
+                label = label.resize(self.size, resample=Image.NEAREST)  # label要用邻近差值
         return image, label
 
     pass
@@ -243,7 +211,7 @@ class PairNormalizeToTensor(object):
         self.std = std
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         归一化，只对image除以255，label不动
         :param image: [H,W,C] PIL Image RGB 0~255
@@ -262,7 +230,8 @@ class PairNormalizeToTensor(object):
 
         # 先转为ndarray，再转为tensor，不归一化，维度保持不变
         # label [H,W]tensor trainId
-        label = torch.from_numpy(np.asarray(label))
+        if label is not None:
+            label = torch.from_numpy(np.asarray(label))
 
         return image, label
 
@@ -281,7 +250,7 @@ class PairRandomFixErase(object):
         self.value = value
         pass
 
-    def __call__(self, image, label):
+    def __call__(self, image, label=None):
         """
         按照固定大小，随机遮挡图像中的某一块方形区域
         :param image: [C,H,W] tensor，必须是tensor
@@ -349,12 +318,9 @@ if __name__ == '__main__':
     tensor tensor([[2, 4],
     """
 
-    im = Image.open('Z:/Python资料/AI/cv_lane_seg_初赛/'
-                    'Road04/ColorImage_road04/ColorImage/Record002/Camera 6/'
-                    '171206_054227243_Camera_6.jpg')
-    lb = Image.open('Z:/Python资料/AI/cv_lane_seg_初赛/'
-                    'Gray_Label/Label_road04/Label/Record002/Camera 6/'
-                    '171206_054227243_Camera_6_bin.png')
+    res = os.path.join(get_proj_root(), 'res')
+    im = Image.open(os.path.join(res, 'image.jpg'))
+    lb = Image.open(os.path.join(res, 'label.png'))
 
     fig, ax = plt.subplots(2, 2, figsize=(20, 10))
     ax = ax.flatten()
@@ -362,37 +328,36 @@ if __name__ == '__main__':
     ax[1].imshow(lb, cmap='gray')
 
     crop = PairCrop(offsets=(690, None), size=(None, None))
-    crop_tf = PairCropTF(690, 0, 1000, None)
     random_hflip = PairRandomHFlip()
     random_vflip = PairRandomVFlip()
-    adjust = PairAdjust(factors=(0.1, 1.5))
+    adjust = PairAdjustColor(factors=(0.1, 1.5))
     adjust_gamma = PairAdjustGamma(gamma=0.9)
     resize = PairResize(size=256)
     to_tensor = PairNormalizeToTensor(norm=False)
-    random_fix_crop = PairRandomFixErase()
+    random_fix_crop = PairRandomFixErase(mask_size=224)
     gaussian_blur = PairRandomGaussianBlur()
     ts = [
-        # crop,
-        # crop_tf,
-        # random_hflip,
+        crop,
+        random_hflip,
         # random_vflip,
         # adjust,
         # adjust_gamma,
-        # resize,
-        # to_tensor,
-        # random_fix_crop,
-        gaussian_blur,
+        resize,
+        to_tensor,
+        random_fix_crop,
+        # gaussian_blur,
     ]
     for t in ts:
         im, lb = t(im, lb)
         pass
 
-    # print(im.shape, lb.shape)
-    # im = tsfs.ToPILImage()(im).convert('RGB')
+    print(im.shape, lb.shape)
+    im = TF.to_pil_image(im).convert('RGB')
 
     ax[2].imshow(im)
     ax[3].imshow(lb, cmap='gray')
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'), 'aug.jpg'))
+    plt.close(fig)
 
     pass
