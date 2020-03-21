@@ -46,15 +46,13 @@ def timer(logger):
     return timer_func
 
 
-def get_logger(logger_type='train'):
-    assert logger_type in ('train', 'test')
-
-    logger = logging.getLogger(logger_type)
+def get_logger():
+    logger = logging.getLogger()
     if not logger.handlers:  # 防止加入多个handler造成重复写日志
         fmt = logging.Formatter('%(asctime)s %(msg)s')  # 日志格式
 
         logfile = os.path.join(os.path.join(get_proj_root(), 'res'),
-                               '{:s}.log'.format(logger_type))  # 日志位置
+                               'logger.log')  # 日志位置
 
         fh = logging.FileHandler(logfile)
         fh.setFormatter(fmt)
