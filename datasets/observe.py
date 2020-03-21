@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import time
-from datasets.process_label import id_to_trainid, gray_to_rgb
+from datasets.laneseg import LaneSegDataset
 from PIL import Image
 
 
-def observe_data(image, label, alpha=0.5, name=None):
+def observe_data(image, label, name=None):
     """
     将image和label融合到一张图片保存
     :param image: PIL Image，image
@@ -19,7 +19,7 @@ def observe_data(image, label, alpha=0.5, name=None):
     """
     image = np.array(image)  # PIL Image -> [H,W,C]ndarray
     label = np.asarray(label)  # PIL Image -> [H,W]ndarray id
-    label = id_to_trainid(label)  # [H,W]ndarray trainId
+    label = LaneSegDataset.encode(label)  # [H,W]ndarray trainId
     mask = (label != 0).astype(np.uint8) * 255  # [H,W]透明部分alpha的mask
 
     h, w = label.shape[:2]
@@ -44,7 +44,7 @@ def observe_data(image, label, alpha=0.5, name=None):
     right = np.clip(right, 0 + bound, w)
     image[:, right - bound: right] = [255, 0, 0]  # 右线
 
-    label = gray_to_rgb(label)  # [H,W,C=3],ndarray RGB
+    label = LaneSegDataset.decode_rgb(label)  # [H,W,C=3],ndarray RGB
     mask = mask[..., np.newaxis]  # [H,W,C=1],ndarray Alpha
     label = np.append(label, mask, axis=2)  # [H,W,C=4],ndarray 设置label的alpha通道
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         if os.path.exists(absim) and os.path.exists(abslb):
             im = Image.open(absim)
             lb = Image.open(abslb)
-            observe_data(im, lb, alpha=0.5, name=fim)
+            observe_data(im, lb, name=fim)
             # predict(im, lb)
         pass
     pass
