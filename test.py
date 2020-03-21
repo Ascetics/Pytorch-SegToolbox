@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # model.load_state_dict(wt)
     s = input('->')
     test(net=model,
-         test_data=LaneSegDataset('/root/private/LaneSegmentation/data_list/test.csv'),  # 不剪裁，不缩放的测试集，读取PIL Image
+         test_data=LaneSegDataset('test'),  # 不剪裁，不缩放的测试集，读取PIL Image
          resize_to=384,  # 这里指定缩放大小
          n_class=8,
          device=dev,
