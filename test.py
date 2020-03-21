@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 
+from tqdm import tqdm
 from PIL import Image
 from train import get_model
 from datasets.laneseg import LaneSegDataset
@@ -10,11 +11,11 @@ from utils.tools import now_str, get_metrics, get_confusion_matrix, get_logger
 from utils.augment import PairCrop, PairNormalizeToTensor, PairResize
 
 
-def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
+def test(net, data, device, resize_to=256, n_class=8, compare=False):
     """
     测试
     :param net: AI网络
-    :param test_data: test dataset
+    :param data: test dataset
     :param device: torch.device GPU or CPU
     :param n_class: n种分类
     :param compare: 是否生成对比图片
@@ -22,8 +23,8 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
     """
     net.to(device)
     net.eval()  # 测试
-    confusion_matrix = np.zeros((n_class, n_class))  # 记录整个测试的混淆矩阵
-    test_pics_miou = 0.  # 累加每张图像的mIoU
+    total_cm = np.zeros((n_class, n_class))  # 记录整个测试的混淆矩阵
+    total_batch_miou = 0.  # 累加每张图像的mIoU
 
     offset = 690  # 剪裁690x3384
     pair_crop = PairCrop(offsets=(offset, None))  # 剪裁690x3384
@@ -31,7 +32,8 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
     pair_norm_to_tensor = PairNormalizeToTensor(norm=True)  # 归一化并正则化
 
     with torch.no_grad():  # 测试阶段，不需要计算梯度，节省内存
-        for i_batch, (im, lb) in enumerate(test_data):
+        tqdm_data = tqdm(enumerate(data, start=1))
+        for i_batch, (im, lb) in tqdm_data:
             # if i_batch > 10:
             #     break
             im_t, lb_t = pair_crop(im, lb)  # PIL Image,PIL Image
@@ -53,8 +55,9 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
 
             supplement = np.zeros((offset, lb.size[0]), dtype=np.uint8)  # [H,W]ndarray,补充成背景
             pred = np.append(supplement, pred, axis=0)  # 最终的估值，[H,W]ndarray,在H方向cat，给pred补充被剪裁的690x3384
-            cm = get_confusion_matrix(pred, lb, n_class)  # 本张图像的混淆矩阵
-            confusion_matrix += cm  # 累加
+            batch_cm = get_confusion_matrix(pred, lb, n_class)  # 本张图像的混淆矩阵
+            total_cm += batch_cm  # 累加
+            batch_miou = 0.  # 每个图像的miou可能不计算，那就一直写0
 
             if compare:  # 生成对比图
                 fontsize = 16  # 图像文字字体大小
@@ -67,9 +70,9 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
                 ax[1].imshow(LaneSegDataset.decode_rgb(np.asarray(lb)))  # 右上角显示 Grand Truth
                 ax[1].set_title('Grand Truth', fontsize=fontsize)  # 标题
 
-                pic_miou = get_metrics(cm, metrics='mean_iou')  # 计算本张图像的mIoU
-                fig.suptitle('mIoU:{:.4f}'.format(pic_miou), fontsize=fontsize)  # 用mIoU作为大标题
-                test_pics_miou += pic_miou
+                batch_miou = get_metrics(batch_cm, metrics='mean_iou')  # 计算本张图像的mIoU
+                fig.suptitle('mIoU:{:.4f}'.format(batch_miou), fontsize=fontsize)  # 用mIoU作为大标题
+                total_batch_miou += batch_miou
 
                 mask = (pred != 0).astype(np.uint8) * 255  # [H,W]ndarray,alpha融合的mask
 
@@ -91,14 +94,15 @@ def test(net, test_data, device, resize_to=256, n_class=8, compare=False):
                 plt.savefig('/root/private/imfolder/pred-{:s}.jpg'.format(now_str()))  # 保存图像
                 plt.close(fig)
                 pass
+            tqdm_str = '{:d}/{:d} batch|batch_miou {:.4f}'
+            tqdm_data.set_description(tqdm_str.format(i_batch, len(data), batch_miou))
             pass
-        mean_iou = get_metrics(confusion_matrix)  # 整个测试的mIoU
-        test_pics_miou /= len(test_data)
+        mean_iou = get_metrics(total_cm)  # 整个测试的mIoU
+        total_batch_miou /= len(data)
 
-        logger = get_logger('test')
-        msg = 'Test mIoU : {:.4f} (Accumulate ConfusionMat)'.format(mean_iou)
-        logger.info(msg)
-        msg = 'Test mIoU : {:.4f} (Mean of per Image)'.format(test_pics_miou)
+        logger = get_logger()
+        msg = ('Test mIoU : {:.4f} (Accumulate ConfusionMat)|'
+               'Test mIoU : {:.4f} (Mean of per Image)').format(mean_iou, total_batch_miou)
         logger.info(msg)
         return mean_iou
 
@@ -107,14 +111,14 @@ if __name__ == '__main__':
     dev = torch.device('cuda:4')  # 选择一个可用的GPU
     load_file = ('/root/private/LaneSegmentation/weight/'
                  'deeplabv3p_xception-2020-03-18-15-32-34-epoch-03.pth')  # 读取训练好的参数
-    model = get_model('deeplabv3p_xception',
-                      in_channels=3, n_class=8, device=dev, load_weight=load_file)
+    mod = get_model('deeplabv3p_xception',
+                    in_channels=3, n_class=8, device=dev, load_weight=load_file)
     # model = DeepLabV3P('xception', 3, 8)
     # wt = torch.load(load_file, map_location=dev)
     # model.load_state_dict(wt)
     s = input('->')
-    test(net=model,
-         test_data=LaneSegDataset('test'),  # 不剪裁，不缩放的测试集，读取PIL Image
+    test(net=mod,
+         data=LaneSegDataset('test'),  # 不剪裁，不缩放的测试集，读取PIL Image
          resize_to=384,  # 这里指定缩放大小
          n_class=8,
          device=dev,
