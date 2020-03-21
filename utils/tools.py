@@ -49,9 +49,9 @@ def get_logger(logger_name='segtoolbox'):
         fh.setFormatter(fmt)
         logger.addHandler(fh)  # 输出到文件
 
-        sh = logging.StreamHandler()
-        sh.setFormatter(fmt)
-        logger.addHandler(sh)  # 输出到终端
+        # sh = logging.StreamHandler()
+        # sh.setFormatter(fmt)
+        # logger.addHandler(sh)  # 输出到终端
 
     logger.setLevel(logging.DEBUG)
     return logger
