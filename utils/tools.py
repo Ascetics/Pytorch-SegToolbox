@@ -30,15 +30,15 @@ def timer(func):
         end_time = datetime.now()  # 结束时间
         mm, ss = divmod((end_time - begin_time).seconds, 60)  # 秒换算成分、秒
         hh, mm = divmod(mm, 60)  # 分钟换算成时、分
-        duration_str = 'Duration: {:02d}:{:02d}:{:02d}|'.format(hh, mm, ss)  # HH:mm:ss
+        duration_str = 'Duration: {:02d}:{:02d}:{:02d}'.format(hh, mm, ss)  # HH:mm:ss
         get_logger().info(duration_str)  # 记录到日志里面
         return res  # 返回func返回值
 
     return timer_func
 
 
-def get_logger():
-    logger = logging.getLogger()
+def get_logger(logger_name='segtoolbox'):
+    logger = logging.getLogger(logger_name)
     if not logger.handlers:  # 防止加入多个handler造成重复写日志
         fmt = logging.Formatter('%(asctime)s %(msg)s')  # 日志格式
 
@@ -165,13 +165,13 @@ if __name__ == '__main__':
     print('precision', get_metrics(c, metrics='precision'))
 
 
-    @timer(get_logger())
+    @timer
     def test_train():  # 模拟一个epoch训练
         time.sleep(random.randint(0, 5) / 5)
         return random.random(), random.random()
 
 
-    @timer(get_logger())
+    @timer
     def test_valid():  # 模拟一个epoch验证
         time.sleep(random.randint(0, 5) / 5)
         return random.random(), random.random()
