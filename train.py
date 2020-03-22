@@ -31,8 +31,11 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device, i_epoch):
     total_batch_miou = 0.
 
     bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
-    tqdm_data = tqdm(data, bar_format=bar_format,
-                     desc='Epoch {:02d} Train'.format(i_epoch))  # 进度条
+    # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
+    tqdm_data = tqdm(data,
+                     ncols=120,  # 进度条宽120列，linux必须指定，否则按照terminal宽度80
+                     bar_format=bar_format,  # 进度条格式
+                     desc='Epoch {:02d} Train'.format(i_epoch))  # 进度条的{desc}
     for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
         im = im.to(device)  # [N,C,H,W] tensor 一个训练batch image
         lb = lb.to(device)  # [N,H,W] tensor 一个训练batch label
@@ -89,8 +92,11 @@ def _epoch_valid(net, loss_func, data, n_class, device, i_epoch):
 
     with torch.no_grad():  # 验证阶段，不需要计算梯度，节省内存
         bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
-        tqdm_data = tqdm(data, bar_format=bar_format,
-                         desc='Epoch {:02d} Valid'.format(i_epoch))  # 进度条
+        # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
+        tqdm_data = tqdm(data,
+                         ncols=120,  # 进度条宽120列，linux必须指定，否则按照terminal宽度80
+                         bar_format=bar_format,  # 进度条格式
+                         desc='Epoch {:02d} Valid'.format(i_epoch))  # 进度条的{desc}
         for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
             im = im.to(device)  # [N,C,H,W] tensor 一个验证batch image
             lb = lb.to(device)  # [N,H,W] tensor 一个验证batch label
@@ -201,7 +207,7 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
 
 
 if __name__ == '__main__':
-    dev = torch.device('cpu')
+    dev = torch.device('cuda:7')
     # name = 'deeplabv3p_xception'
     name = 'fcn8s'
     load_file = None
@@ -216,16 +222,15 @@ if __name__ == '__main__':
     lossfn.to(dev)
 
     optm = torch.optim.Adam(params=mod.parameters(),
-                            lr=1e-3,
-                            weight_decay=1e-4)  # 将模型参数装入优化器
+                            lr=0.003)  # 将模型参数装入优化器
 
     # 768x256,1024x384,1536x512
     train(net=mod,
           loss_func=lossfn,
           optimizer=optm,
-          train_data=get_data('train', resize_to=256, batch_size=2),
-          valid_data=get_data('valid', resize_to=256, batch_size=2),
+          train_data=get_data('train', resize_to=512, batch_size=2),
+          valid_data=get_data('valid', resize_to=512, batch_size=2),
           n_class=num_class,
           device=dev,
           model_name=name,
-          epochs=1)  # 开始训（炼）练（丹）
+          epochs=20)  # 开始训（炼）练（丹）

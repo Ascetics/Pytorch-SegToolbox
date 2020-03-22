@@ -33,7 +33,8 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
 
     with torch.no_grad():  # 测试阶段，不需要计算梯度，节省内存
         bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
-        tqdm_data = tqdm(data, bar_format=bar_format, desc='Test')
+        # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
+        tqdm_data = tqdm(data, ncols=120, bar_format=bar_format, desc='Test')
         for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
             if i_batch > 1:
                 break
