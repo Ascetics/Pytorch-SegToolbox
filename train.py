@@ -69,6 +69,12 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device, i_epoch):
     mean_iou = get_metrics(total_cm, metrics='mean_iou')  # float 求mIoU
     total_batch_miou /= len(data)  # 计算所有batch的miou的平均
 
+    # 记录Train日志
+    log_str = ('Train Loss: {:.4f}|'
+               'Train mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
+               'Train mIoU: {:.4f} (Mean of Batch ConfusionMat)')
+    log_str = log_str.format(total_loss, mean_iou, total_batch_miou)
+    get_logger().info(log_str)
     return total_loss, mean_iou, total_batch_miou
 
 
@@ -124,6 +130,13 @@ def _epoch_valid(net, loss_func, data, n_class, device, i_epoch):
         total_loss /= len(data)  # 求取一个epoch验证的loss
         mean_iou = get_metrics(total_cm, metrics='mean_iou')  # float 求mIoU
         total_batch_miou /= len(data)
+
+        # 记录Valid日志
+        log_str = ('Valid Loss: {:.4f}|'
+                   'Valid mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
+                   'Valid mIoU: {:.4f} (Mean of Batch ConfusionMat)')
+        log_str = log_str.format(total_loss, mean_iou, total_batch_miou)
+        get_logger().info(log_str)
         return total_loss, mean_iou, total_batch_miou
 
 
@@ -144,24 +157,13 @@ def train(net, loss_func, optimizer, train_data, valid_data,
     """
     for e in range(1, epochs + 1):
         get_logger().info('Epoch: {:02d}'.format(e))
-
         # 一个epoch训练
-        t_loss, t_miou, t_batch_miou = _epoch_train(net, loss_func, optimizer, train_data, n_class, device, e)
-        train_str = ('Train Loss: {:.4f}|'
-                     'Train mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
-                     'Train mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(t_loss, t_miou, t_batch_miou)
-        get_logger().info(train_str)
-
+        _epoch_train(net, loss_func, optimizer, train_data, n_class, device, e)
         # 每个epoch的参数都保存
         save_dir = save_weight(net, model_name, e)
         get_logger().info(save_dir)  # 日志记录
-
         # 一个epoch验证
-        v_loss, v_miou, v_batch_miou = _epoch_valid(net, loss_func, valid_data, n_class, device, e)
-        valid_str = ('Valid Loss: {:.4f}|'
-                     'Valid mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
-                     'Valid mIoU: {:.4f} (Mean of Batch ConfusionMat)').format(v_loss, v_miou, v_batch_miou)
-        get_logger().info(valid_str)
+        _epoch_valid(net, loss_func, valid_data, n_class, device, e)
         pass
     pass
 
