@@ -101,6 +101,10 @@ class FCN8s(nn.Module):
         self._init_param()
 
     def _init_param(self):
+        """
+        初始化参数
+        :return:
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
