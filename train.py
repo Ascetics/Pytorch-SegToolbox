@@ -30,7 +30,7 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device, i_epoch):
     total_cm = np.zeros((n_class, n_class))  # ndarray 一个epoch的混淆矩阵
     total_batch_miou = 0.
 
-    bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+    bar_format = '{desc}{postfix}|{n_fmt}/{total_fmt}|{percentage:3.0f}%|{bar}|{elapsed}<{remaining}'
     # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
     tqdm_data = tqdm(data,
                      ncols=120,  # 进度条宽120列，linux必须指定，否则按照terminal宽度80
@@ -71,8 +71,8 @@ def _epoch_train(net, loss_func, optimizer, data, n_class, device, i_epoch):
 
     # 记录Train日志
     log_str = ('Train Loss: {:.4f}|'
-               'Train mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
-               'Train mIoU: {:.4f} (Mean of Batch ConfusionMat)')
+               'Train mIoU: {:.4f}|'
+               'Train bat_mIoU: {:.4f}')
     log_str = log_str.format(total_loss, mean_iou, total_batch_miou)
     get_logger().info(log_str)
     return total_loss, mean_iou, total_batch_miou
@@ -97,7 +97,7 @@ def _epoch_valid(net, loss_func, data, n_class, device, i_epoch):
     total_batch_miou = 0.
 
     with torch.no_grad():  # 验证阶段，不需要计算梯度，节省内存
-        bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+        bar_format = '{desc}{postfix}|{n_fmt}/{total_fmt}|{percentage:3.0f}%|{bar}|{elapsed}<{remaining}'
         # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
         tqdm_data = tqdm(data,
                          ncols=120,  # 进度条宽120列，linux必须指定，否则按照terminal宽度80
@@ -133,8 +133,8 @@ def _epoch_valid(net, loss_func, data, n_class, device, i_epoch):
 
         # 记录Valid日志
         log_str = ('Valid Loss: {:.4f}|'
-                   'Valid mIoU: {:.4f} (Mean of Epoch ConfusionMat)|'
-                   'Valid mIoU: {:.4f} (Mean of Batch ConfusionMat)')
+                   'Valid mIoU: {:.4f}|'
+                   'Valid bat_mIoU: {:.4f}')
         log_str = log_str.format(total_loss, mean_iou, total_batch_miou)
         get_logger().info(log_str)
         return total_loss, mean_iou, total_batch_miou
@@ -181,12 +181,13 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
     if model_type == 'fcn8s':
         # raise NotImplementedError
         model = FCN8s(n_class)
-    elif model_type == 'resnet152':
+    elif model_type == 'unet_resnet152':
         raise NotImplementedError
         # model = unet_resnet('resnet152', in_channels, n_class, pretrained=True)
-    elif model_type == 'deeplabv3p_resnet':
-        raise NotImplementedError
-        # model = DeepLabV3P('resnet101', in_channels, n_class)
+    elif model_type == 'deeplabv3p_resnet50':
+        model = DeepLabV3P('resnet50', in_channels, n_class)
+    elif model_type == 'deeplabv3p_resnet101':
+        model = DeepLabV3P('resnet101', in_channels, n_class)
     elif model_type == 'deeplabv3p_xception':
         model = DeepLabV3P('xception', in_channels, n_class)
     else:
@@ -209,9 +210,10 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
 
 
 if __name__ == '__main__':
-    dev = torch.device('cuda:7')
+    dev = torch.device('cuda:0')
+    name = 'deeplabv3p_resnet101'
     # name = 'deeplabv3p_xception'
-    name = 'fcn8s'
+    # name = 'fcn8s'
     load_file = None
     # load_file = ('/root/private/LaneSegmentation/weight/'
     #              'deeplabv3p_xception-2020-03-17 06:03:02.609908-epoch-14.pth')
@@ -230,8 +232,8 @@ if __name__ == '__main__':
     train(net=mod,
           loss_func=lossfn,
           optimizer=optm,
-          train_data=get_data('train', resize_to=512, batch_size=2),
-          valid_data=get_data('valid', resize_to=512, batch_size=2),
+          train_data=get_data('train', resize_to=512, batch_size=4),
+          valid_data=get_data('valid', resize_to=512, batch_size=4),
           n_class=num_class,
           device=dev,
           model_name=name,
