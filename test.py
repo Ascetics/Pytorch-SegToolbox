@@ -32,7 +32,7 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
     pair_norm_to_tensor = PairNormalizeToTensor(norm=True)  # 归一化并正则化
 
     with torch.no_grad():  # 测试阶段，不需要计算梯度，节省内存
-        bar_format = '{desc}:{percentage:3.0f}%|{bar}|[{n_fmt}/{total_fmt} {elapsed}<{remaining}{postfix}]'
+        bar_format = '{desc}{postfix}|{n_fmt}/{total_fmt}|{percentage:3.0f}%|{bar}|{elapsed}<{remaining}'
         # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
         tqdm_data = tqdm(data, ncols=120, bar_format=bar_format, desc='Test')
         for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
@@ -104,8 +104,8 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
         total_batch_miou /= len(data)
 
         logger = get_logger()
-        msg = ('Test mIoU : {:.4f} (Mean of Epoch ConfusionMat)|'
-               'Test mIoU : {:.4f} (Mean of Batch ConfusionMat)').format(mean_iou, total_batch_miou)
+        msg = ('Test mIoU : {:.4f}|'
+               'Test bat_mIoU : {:.4f}').format(mean_iou, total_batch_miou)
         logger.info(msg)
         return mean_iou
 
