@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from backbones.aligned_xception import xception_backbone
+from backbones.resnet_atrous import resnet50_atrous, resnet101_atrous
 
 
 class ASPPConv1x1(nn.Sequential):
@@ -103,31 +104,14 @@ def get_backbone(in_channels, backbone_type='resnet101'):
     :param backbone_type: 推荐使用ResNet101或Xception作为DeepLabV3+的Backbone
     :return: 返回backbone，主干特征channels，low-level特征channels
     """
-    if backbone_type == 'resnet18':
-        raise NotImplementedError
-        # backbone = resnet18_backbone(in_channels=in_channels)
-        # atrous_channels = 512
-        # low_level_channels = 64
-    elif backbone_type == 'resnet34':
-        raise NotImplementedError
-        # backbone = resnet34_backbone(in_channels=in_channels)
-        # atrous_channels = 512
-        # low_level_channels = 64
-    elif backbone_type == 'resnet50':
-        raise NotImplementedError
-        # backbone = resnet50_backbone(in_channels=in_channels)
-        # atrous_channels = 2048
-        # low_level_channels = 256
+    if backbone_type == 'resnet50':
+        backbone = resnet50_atrous(in_channels=in_channels)
+        atrous_channels = 2048
+        low_level_channels = 256
     elif backbone_type == 'resnet101':
-        raise NotImplementedError
-        # backbone = resnet101_backbone(in_channels=in_channels)
-        # atrous_channels = 2048
-        # low_level_channels = 256
-    elif backbone_type == 'resnet152':
-        raise NotImplementedError
-        # backbone = resnet152_backbone(in_channels=in_channels)
-        # atrous_channels = 2048
-        # low_level_channels = 256
+        backbone = resnet101_atrous(in_channels=in_channels)
+        atrous_channels = 2048
+        low_level_channels = 256
     elif backbone_type == 'xception':
         backbone = xception_backbone(in_channels=in_channels)
         atrous_channels = 2048
