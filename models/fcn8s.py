@@ -18,51 +18,64 @@ class FCN8s(nn.Module):
         super(FCN8s, self).__init__()
         # conv1 第一次下采样，padding=100保证fc6的7x7卷积能正常进行
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, 3, padding=100),
+            nn.Conv2d(3, 64, 3, padding=100, bias=False),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, 3, padding=1),
+            nn.Conv2d(64, 64, 3, padding=1, bias=False),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/2
         )
 
         # conv2 第二次下采样
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 128, 3, padding=1),
+            nn.Conv2d(64, 128, 3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, 3, padding=1),
+            nn.Conv2d(128, 128, 3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/4
         )
 
         # conv3 第三次下采样
         self.conv3 = nn.Sequential(
-            nn.Conv2d(128, 256, 3, padding=1),
+            nn.Conv2d(128, 256, 3, padding=1, bias=False),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, 3, padding=1),
+            nn.Conv2d(256, 256, 3, padding=1, bias=False),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, 3, padding=1),
+            nn.Conv2d(256, 256, 3, padding=1, bias=False),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/8
         )
 
         # conv4 第四次下采样
         self.conv4 = nn.Sequential(
-            nn.Conv2d(256, 512, 3, padding=1),
+            nn.Conv2d(256, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, 3, padding=1),
+            nn.Conv2d(512, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, 3, padding=1),
+            nn.Conv2d(512, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/16
         )
 
         # conv5 第五次下采样
         self.conv5 = nn.Sequential(
-            nn.Conv2d(512, 512, 3, padding=1),
+            nn.Conv2d(512, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, 3, padding=1),
+            nn.Conv2d(512, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, 3, padding=1),
+            nn.Conv2d(512, 512, 3, padding=1, bias=False),
+            nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/32
         )
@@ -70,14 +83,16 @@ class FCN8s(nn.Module):
         # fc6 将全连接层改为卷积层，7x7卷积
         # 当输入大于224x224时，输出heatmap
         self.fc6 = nn.Sequential(
-            nn.Conv2d(512, 4096, 7),
+            nn.Conv2d(512, 4096, 7, bias=False),
+            nn.BatchNorm2d(4096),
             nn.ReLU(inplace=True),
             nn.Dropout2d()
         )
 
         # fc7
         self.fc7 = nn.Sequential(
-            nn.Conv2d(4096, 4096, 1),
+            nn.Conv2d(4096, 4096, 1, bias=False),
+            nn.BatchNorm2d(4096),
             nn.ReLU(inplace=True),
             nn.Dropout2d()
         )
@@ -108,6 +123,8 @@ class FCN8s(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
