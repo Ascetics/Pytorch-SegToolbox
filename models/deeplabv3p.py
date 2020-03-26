@@ -142,13 +142,11 @@ class DeepLabV3P(nn.Module):
                                     3, padding=1, bias=False),
                           nn.BatchNorm2d(self.aspp_out_channels),
                           nn.ReLU(inplace=True),
-                          nn.Dropout2d(0.5),  # 随机丢弃参数
                           nn.Conv2d(self.aspp_out_channels,
                                     self.aspp_out_channels,
                                     3, padding=1, bias=False),
                           nn.BatchNorm2d(self.aspp_out_channels),
-                          nn.ReLU(inplace=True),
-                          nn.Dropout2d(0.1), ]  # 随机丢弃参数
+                          nn.ReLU(inplace=True), ]
         self.decode = nn.Sequential(*decode_modules)  # 两个3x3 conv decode
         self.classifier = nn.Conv2d(self.aspp_out_channels, n_class, 1)  # 最终分类
 
