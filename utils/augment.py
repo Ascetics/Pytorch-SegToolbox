@@ -238,14 +238,14 @@ class PairNormalizeToTensor(object):
     pass
 
 
-class PairRandomFixErase(object):
+class PairRandomCutout(object):
     def __init__(self, mask_size=64, value=0):
         """
         按照固定大小，随机遮挡图像中的某一块方形区域
         :param mask_size: 被遮挡的区域大小，默认64x64
         :param value: 被遮挡的部分用value值填充
         """
-        super(PairRandomFixErase, self).__init__()
+        super(PairRandomCutout, self).__init__()
         self.mask_size = mask_size
         self.value = value
         pass
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     adjust_gamma = PairAdjustGamma(gamma=0.9)
     resize = PairResize(size=256)
     to_tensor = PairNormalizeToTensor(norm=False)
-    random_fix_crop = PairRandomFixErase(mask_size=224)
+    random_fix_crop = PairRandomCutout(mask_size=224)
     gaussian_blur = PairRandomGaussianBlur()
     ts = [
         crop,
