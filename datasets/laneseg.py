@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from utils.tools import get_proj_root
 from utils.augment import PairCrop, PairResize, PairAdjustColor, PairRandomHFlip, \
-    PairNormalizeToTensor, PairRandomFixErase
+    PairNormalizeToTensor, PairRandomCutout
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF
 
@@ -28,7 +28,8 @@ class LaneSegDataset(Dataset):
         'valid': os.path.join(_data_list_dir, 'laneseg_valid.csv'),  # 车道线分割验证集csv文件路径
         'test': os.path.join(_data_list_dir, 'laneseg_test.csv'),  # 车道线分割测试集csv文件路径
     }
-    skip_road = ('Road03',)  # 冠军观察数据说Road03数据质量不好
+    # skip_road = ('Road03',)  # 冠军观察数据说Road03数据质量不好
+    skip_road = (None,)
 
     @staticmethod
     def _get_image_label_dir():
@@ -285,7 +286,7 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
             PairRandomHFlip(),  # 随机左右翻转
             PairAdjustColor(),  # 调整亮度、对比度、饱和度
             PairNormalizeToTensor(norm=norm),  # 归一化正则化，变成tensor
-            PairRandomFixErase(),  # 随机遮挡
+            PairRandomCutout(),  # 随机遮挡
         ]
         shuffle = True
     elif dataset_type == 'valid':
@@ -307,30 +308,33 @@ def get_data(dataset_type, crop_offset=(690, None), resize_to=256,
 
     image_dataset = LaneSegDataset(dataset_type, transform)
     data_loader = DataLoader(image_dataset, batch_size=batch_size,
-                             shuffle=shuffle, drop_last=True)
+                             shuffle=shuffle, drop_last=True,
+                             num_workers=4, pin_memory=True)
     return data_loader
 
 
 if __name__ == '__main__':
-    LaneSegDataset.make_data_list(0.0004, 0.0004)
+    LaneSegDataset.image_file_base = '/home/mist/data/LaneSeg/Image_Data'
+    LaneSegDataset.label_file_base = '/home/mist/data/LaneSeg/Gray_Label'
+    LaneSegDataset.make_data_list()
 
     # 训练、验证、测试dataset
-    data = get_data('test', norm=False)
+    # data = get_data('test', norm=False)
 
     # 逐个读取，查看读取的内容，验证dataloader可用
-    for i, (im, lb) in enumerate(data):
-        if i > 1:
-            break
-        print(i)
-        print(type(im), im.shape)
-        print(type(lb), lb.shape, np.bincount(lb.flatten()))
-
-        fig, ax = plt.subplots(1, 2)
-        ax = ax.flatten()
-        im = TF.to_pil_image(im.squeeze(0))
-        lb = TF.to_pil_image(lb.squeeze(0))
-        ax[0].imshow(im)
-        ax[1].imshow(lb, cmap='gray')
-        plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'),
-                                 'laneseg_dataset' + str(i) + '.jpg'))
-        plt.close(fig)
+    # for i, (im, lb) in enumerate(data):
+    #     if i > 1:
+    #         break
+    #     print(i)
+    #     print(type(im), im.shape)
+    #     print(type(lb), lb.shape, np.bincount(lb.flatten()))
+    #
+    #     fig, ax = plt.subplots(1, 2)
+    #     ax = ax.flatten()
+    #     im = TF.to_pil_image(im.squeeze(0))
+    #     lb = TF.to_pil_image(lb.squeeze(0))
+    #     ax[0].imshow(im)
+    #     ax[1].imshow(lb, cmap='gray')
+    #     plt.savefig(os.path.join(os.path.join(get_proj_root(), 'res'),
+    #                              'laneseg_dataset' + str(i) + '.jpg'))
+    #     plt.close(fig)
