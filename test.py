@@ -36,8 +36,8 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
         # {desc}{进度条百分比}[{当前/总数}{用时<剩余时间}{自己指定的后面显示的}]
         tqdm_data = tqdm(data, ncols=120, bar_format=bar_format, desc='Test')
         for i_batch, (im, lb) in enumerate(tqdm_data, start=1):
-            if i_batch > 1:
-                break
+            # if i_batch > 1:
+            #     break
             im_t, lb_t = pair_crop(im, lb)  # PIL Image,PIL Image
             im_t, lb_t = pair_resize(im_t, lb_t)  # PIL Image,PIL Image
             im_t, lb_t = pair_norm_to_tensor(im_t, lb_t)  # [C,H,W]tensor,[H,W]tensor
@@ -92,7 +92,7 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
 
                 plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99,
                                     wspace=0.01, hspace=0.01)  # 调整子图边距间距
-                plt.savefig('/root/private/imfolder/pred-{:s}.jpg'.format(now_str()))  # 保存图像
+                plt.savefig('/home/mist/imfolder/pred-{:s}.jpg'.format(now_str()))  # 保存图像
                 plt.close(fig)
                 pass
             tqdm_str = 'mIoU={:.4f}|bat_mIoU={:.4f}'  # 进度条
@@ -111,10 +111,10 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
 
 
 if __name__ == '__main__':
-    dev = torch.device('cpu')  # 选择一个可用的GPU
-    # load_file = ('/root/private/LaneSegmentation/weight/'
-    #              'deeplabv3p_xception-2020-03-18-15-32-34-epoch-03.pth')  # 读取训练好的参数
-    load_file = None
+    dev = torch.device('cuda:0')  # 选择一个可用的GPU
+    load_file = ('/home/mist/Pytorch-SegToolbox/res/'
+                 'deeplabv3p_xception-2020-03-27-10-44-08-epoch-10.pth')  # 读取训练好的参数
+    # load_file = None
     mod = get_model('deeplabv3p_xception',
                     in_channels=3, n_class=8, device=dev, load_weight=load_file)
     # model = DeepLabV3P('xception', 3, 8)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     s = input('->')
     test(net=mod,
          data=LaneSegDataset('test'),  # 不剪裁，不缩放的测试集，读取PIL Image
-         resize_to=384,  # 这里指定缩放大小
+         resize_to=578,  # 这里指定缩放大小
          n_class=8,
          device=dev,
          compare=True)

@@ -211,12 +211,12 @@ def get_model(model_type, in_channels, n_class, device, load_weight=None):
 
 if __name__ == '__main__':
     dev = torch.device('cuda:0')
-    name = 'deeplabv3p_resnet101'
-    # name = 'deeplabv3p_xception'
+    # name = 'deeplabv3p_resnet101'
+    name = 'deeplabv3p_xception'
     # name = 'fcn8s'
-    load_file = None
-    # load_file = ('/root/private/LaneSegmentation/weight/'
-    #              'deeplabv3p_xception-2020-03-17 06:03:02.609908-epoch-14.pth')
+    # load_file = None
+    load_file = ('/home/mist/Pytorch-SegToolbox/res/'
+                 'deeplabv3p_xception-2020-03-26-16-47-28-epoch-01.pth')
 
     num_class = 8
     mod = get_model(name, 3, num_class, dev, load_file)
@@ -229,12 +229,13 @@ if __name__ == '__main__':
                             lr=0.003)  # 将模型参数装入优化器
 
     # 768x256,1024x384,1536x512
+    # 1020x3384,510x1692,255x846
     train(net=mod,
           loss_func=lossfn,
           optimizer=optm,
-          train_data=get_data('train', resize_to=512, batch_size=4),
-          valid_data=get_data('valid', resize_to=512, batch_size=4),
+          train_data=get_data('train', resize_to=578, batch_size=4),
+          valid_data=get_data('valid', resize_to=578, batch_size=4),
           n_class=num_class,
           device=dev,
           model_name=name,
-          epochs=20)  # 开始训（炼）练（丹）
+          epochs=40)  # 开始训（炼）练（丹）
