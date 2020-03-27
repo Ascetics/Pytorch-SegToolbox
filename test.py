@@ -112,7 +112,7 @@ def test(net, data, device, resize_to=256, n_class=8, compare=False):
 
 if __name__ == '__main__':
     dev = torch.device('cuda:0')  # 选择一个可用的GPU
-    load_file = ('/home/mist/Pytorch-SegToolbox/res/'
+    load_file = ('/home/mist/Pytorch-SegToolbox/res/preds'
                  'deeplabv3p_xception-2020-03-27-10-44-08-epoch-10.pth')  # 读取训练好的参数
     # load_file = None
     mod = get_model('deeplabv3p_xception',
